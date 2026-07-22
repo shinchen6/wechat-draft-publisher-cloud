@@ -1,0 +1,4 @@
+# 个人配置（含 relay 地址与密钥，严禁进仓库）
+config.json
+__pycache__/
+*.pyc
