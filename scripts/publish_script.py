@@ -5,12 +5,12 @@
 Markdown -> HTML 在本地完成（md2wechat.py，零依赖），relay 只负责把图片 / 草稿推给微信。
 
 用法:
-  python publish_script.py --article X.md --cover Y.png --titles-md T.md
-  python publish_script.py --article X.md --cover Y.png --titles-md T.md --real
+  python scripts/publish_script.py --article X.md --cover Y.png --titles-md T.md
+  python scripts/publish_script.py --article X.md --cover Y.png --titles-md T.md --real
 
 删除草稿（默认 dry-run 只列出，--real 才真删）:
-  python publish_script.py --delete <media_id> --real
-  python publish_script.py --delete-batch ids.txt --real
+  python scripts/publish_script.py --delete <media_id> --real
+  python scripts/publish_script.py --delete-batch ids.txt --real
 
 正文插图:
   在 X.md 里直接写 ![](img/body1.png) 这样的本地图片引用即可。
@@ -57,7 +57,7 @@ def resolve_relay(cloud_url_arg, cloud_key_arg):
     raise RuntimeError(
         "未配置 relay 访问地址 / 密钥。请任选其一：\n"
         "  a) 环境变量 WECHAT_DRAFT_RELAY_URL + WECHAT_DRAFT_RELAY_KEY\n"
-        "  b) 在 skill 目录放 config.json: {\"relay_url\": \"...\", \"relay_key\": \"...\"}\n"
+        "  b) 在 scripts/ 目录放 config.json: {\"relay_url\": \"...\", \"relay_key\": \"...\"}\n"
         "  c) 命令行 --cloud-url / --cloud-key\n"
     )
 
