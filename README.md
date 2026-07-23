@@ -1,4 +1,4 @@
-# wechat-draft-publisher-cloud（skill）
+# wechat-draft-publisher-skill
 
 把 **markdown 文章 + 封面图** 推到 **公众号草稿箱** 的客户端 skill。需配合部署在微信云托管的草稿代理服务端（利用官方「开放接口服务」免鉴权调用公众号接口），访问地址与密钥通过环境变量或 `config.json` 注入，本 skill 不硬编码。
 
@@ -12,16 +12,16 @@
 
 ## 安装
 
-方式一（从 skill 官方仓库）：在客户端执行安装 `wechat-draft-publisher-skill` 即可。
+方式一（从 skill 官方仓库）：在客户端执行安装 `wechat-draft-publisher-cloud` 即可。
 
 方式二（手动）：把本目录复制到技能目录，例如：
 
 ```bash
 # WorkBuddy
-cp -r wechat-draft-publisher-cloud ~/.workbuddy/skills/wechat-draft-publisher-cloud
+cp -r wechat-draft-publisher-skill ~/.workbuddy/skills/wechat-draft-publisher-cloud
 
 # 或放到你的私有 skills 目录
-cp -r wechat-draft-publisher-cloud <你的 skills 根>/wechat-draft-publisher-cloud
+cp -r wechat-draft-publisher-skill <你的 skills 根>/wechat-draft-publisher-cloud
 ```
 
 ## 配置（注入访问地址 + 访问密钥）
