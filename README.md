@@ -1,8 +1,12 @@
-# wechat-draft-publisher（skill）
+# wechat-draft-publisher-cloud（skill）
 
 把 **markdown 文章 + 封面图** 推到 **公众号草稿箱** 的客户端 skill。需配合部署在微信云托管的草稿代理服务端（利用官方「开放接口服务」免鉴权调用公众号接口），访问地址与密钥通过环境变量或 `config.json` 注入，本 skill 不硬编码。
 
 本 skill 是**单独一个项目发布**，便于上架到 skill 官方仓库、独立安装。
+
+## 配套项目（relay 服务端）
+
+本 skill 只是客户端；真正调用公众号接口的是部署在微信云托管的 relay 服务端：[shinchen6/wechat-draft-relay](https://github.com/shinchen6/wechat-draft-relay)。自行部署后，把它的访问地址与密钥注入本 skill 即可（见下方「配置」）。
 
 > **零三方依赖**：`scripts/publish_script.py` 只用 Python 标准库（`urllib` + `base64` + `json`）发请求；Markdown -> 微信图文 HTML 的转换也用标准库在本地完成（`scripts/md2wechat.py`）。只要环境有 Python 3.8+ 即可直接跑，无需 `pip install` 任何东西。
 
@@ -14,10 +18,10 @@
 
 ```bash
 # WorkBuddy
-cp -r wechat-draft-publisher ~/.workbuddy/skills/wechat-draft-publisher
+cp -r wechat-draft-publisher-cloud ~/.workbuddy/skills/wechat-draft-publisher-cloud
 
 # 或放到你的私有 skills 目录
-cp -r wechat-draft-publisher <你的 skills 根>/wechat-draft-publisher
+cp -r wechat-draft-publisher-cloud <你的 skills 根>/wechat-draft-publisher-cloud
 ```
 
 ## 配置（注入访问地址 + 访问密钥）

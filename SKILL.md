@@ -1,11 +1,12 @@
 ---
-name: wechat-draft-publisher
-description: 把现成的 markdown 文章 + 封面图推送到微信公众号草稿箱。触发：「推草稿」「发公众号草稿箱」「wechat draft publish」「send to wechat draft」。不触发：写文章、trending、邮件。默认 dry-run，加 --real 才真发。后端代理地址与密钥通过环境变量或 config.json 注入（不硬编码）。
+name: wechat-draft-publisher-cloud
+description: 基于微信云托管 relay 的公众号草稿发布器：把现成的 markdown 文章 + 封面图推送到微信公众号草稿箱，本地无需 appid/secret、免 IP 白名单。触发：「推草稿」「发公众号草稿箱」「wechat draft publish」「send to wechat draft」。不触发：写文章、trending、邮件。默认 dry-run，加 --real 才真发；relay 地址与密钥通过环境变量或 config.json 注入（不硬编码）。
+version: 1.0.0
 homepage: https://github.com/shinchen6/wechat-draft-publisher-skill
 metadata: {"openclaw":{"emoji":"📤"}}
 ---
 
-# WeChat Draft Publisher
+# WeChat Draft Publisher (Cloud)
 
 一个动作：`article.md + cover.png + 标题` → relay → 公众号草稿箱。
 
