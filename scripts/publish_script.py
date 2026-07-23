@@ -312,6 +312,19 @@ _DIAG_ROUTES = {
 }
 
 
+def _cloudcall_hint(res, msg):
+    """云调用不支持的接口，给出 token 模式提示（让失败原因一目了然）。"""
+    txt = msg or ""
+    code = (res or {}).get("errcode")
+    if code == 48001 or "48001" in txt:
+        return ("\n  → 该接口云调用（开放接口服务）不支持（48001 未授权）。"
+                "需 relay 切 token 模式：填 WX_APPID/WX_APPSECRET + 公众号 IP 白名单。")
+    if "404" in txt or code == 404:
+        return ("\n  → 该接口云调用代理层不路由（404）。"
+                "需 relay 切 token 模式：填 WX_APPID/WX_APPSECRET。")
+    return ""
+
+
 def _run_diagnose(args):
     """--diagnose TYPE：拉取公众号数据做诊断。原样透传微信响应，打印可读摘要。"""
     ep = args.diagnose
@@ -335,10 +348,12 @@ def _run_diagnose(args):
         f"诊断 {ep}",
     )
     if err:
-        print(f"[diagnose] 调用失败: {msg}", file=sys.stderr)
+        hint = _cloudcall_hint(None, msg)
+        print(f"[diagnose] 调用失败: {msg}{hint}", file=sys.stderr)
         sys.exit(1)
     if (res or {}).get("errcode"):
-        print(f"[diagnose] 微信返回错误: {res}", file=sys.stderr)
+        hint = _cloudcall_hint(res, None)
+        print(f"[diagnose] 微信返回错误: {res}{hint}", file=sys.stderr)
         sys.exit(1)
 
     _print_diagnostic(ep, res)
@@ -424,8 +439,8 @@ def main():
     parser.add_argument("--diagnose", default=None,
                         choices=["drafts", "draft", "draft-count", "published",
                                  "stats-user", "stats-article", "comments"],
-                        help="诊断类型：drafts(草稿列表)/draft(单篇)/draft-count(草稿数)/"
-                             "published(已发布)/stats-user(用户增减)/stats-article(图文阅读)/comments(留言)")
+                        help="诊断类型（云调用✅: drafts/draft/draft-count；"
+                             "需 relay 切 token 模式: published/stats-user/stats-article/comments）")
     parser.add_argument("--diag-id", default=None,
                         help="--diagnose draft 用 media_id；comments 用 msg_data_id")
     parser.add_argument("--diag-count", type=int, default=20,

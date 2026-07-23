@@ -108,9 +108,12 @@ python scripts/publish_script.py --delete-batch ids.txt --real
 拉取公众号草稿箱数据做诊断。走 relay 查询接口，原样透传微信响应并打印可读摘要（加 `--report-stdout` 同时打印原始 JSON）。
 
 ```bash
+# ✅ 云调用已实测可用
 python scripts/publish_script.py --diagnose drafts            # 草稿列表（标题/更新时间）
 python scripts/publish_script.py --diagnose draft-count       # 草稿总数
 python scripts/publish_script.py --diagnose draft --diag-id <media_id>   # 回读单篇
+
+# ❌ 需 relay 切 token 模式（云调用不支持：freepublish→48001 / datacube→404 / comment→48001）
 python scripts/publish_script.py --diagnose published         # 已发布列表（含永久链接）
 python scripts/publish_script.py --diagnose stats-user  --begin 2026-07-16 --end 2026-07-22  # 用户增减(≤7天)
 python scripts/publish_script.py --diagnose stats-article --begin 2026-07-20 --end 2026-07-22  # 图文阅读(≤3天)
