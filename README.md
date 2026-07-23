@@ -12,7 +12,7 @@
 
 ## 安装
 
-方式一（从 skill 官方仓库）：在客户端执行安装 `wechat-draft-publisher` 即可。
+方式一（从 skill 官方仓库）：在客户端执行安装 `wechat-draft-publisher-skill` 即可。
 
 方式二（手动）：把本目录复制到技能目录，例如：
 
