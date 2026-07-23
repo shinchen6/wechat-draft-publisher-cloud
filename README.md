@@ -70,7 +70,7 @@ python scripts/publish_script.py --delete-batch ids.txt --real
 
 ## 公众号诊断（拉取全量数据）
 
-`--diagnose` 模式直接调 relay 的查询接口，把公众号的草稿、已发文章、涨粉/阅读数据、留言拉回来，做全面诊断（不写不删，纯读）。
+`--diagnose` 模式直接调 relay 的查询接口，把公众号的草稿箱数据拉回来，做草稿箱诊断（不写不删，纯读）。
 
 ```bash
 # 草稿列表（no_content，只看标题/更新时间）
@@ -97,7 +97,7 @@ python scripts/publish_script.py --diagnose comments --diag-id <msg_data_id>
 # 加 --report-stdout 可同时打印微信原始 JSON
 ```
 
-> `freepublish` / `datacube` / `comment` 部分接口可能不支持云调用：若返回 `48001`，需 relay 切 token 模式（填 `WX_APPID`/`WX_APPSECRET`）或在「微信令牌」补权限后重建版本再测。
+> `freepublish` / `datacube` / `comment` 三类接口经实测确认不支持云调用（freepublish→48001、datacube→404、comment→48001）：需用 relay 切 token 模式（填 `WX_APPID`/`WX_APPSECRET`）才能拉已发布/数据/留言。草稿箱相关接口（`drafts`/`draft`/`draft-count`）均已验证可用。
 
 ## 流程（--real 时）
 

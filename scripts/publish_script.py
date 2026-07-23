@@ -361,8 +361,7 @@ def _print_diagnostic(ep, res):
             print(f"  - {it.get('media_id')} | {title} | 更新 {_ts(it.get('update_time'))}")
         return
     if ep == "draft":
-        c = res.get("content", {})
-        ni = (c.get("news_item") or [{}])
+        ni = (res.get("news_item") or [{}])
         a = ni[0] if ni else {}
         print(f"标题:      {a.get('title')}")
         print(f"media_id:  {a.get('media_id')}")
