@@ -103,6 +103,22 @@ python scripts/publish_script.py --delete-batch ids.txt --real
 - 本地图：`![](img/body1.png)` —— 脚本本地转 HTML 时经 relay `/material` 上传素材库后替换成 mmbiz 链接。
 - `publish_result.json` 里 `body_images` 字段报告本次扫描到的本地插图数量，`html_len` 报告生成 HTML 长度，dry-run 即可验证。
 
+## 公众号诊断（--diagnose，纯读不写）
+
+拉取公众号全量数据做问题诊断。走 relay 查询接口，原样透传微信响应并打印可读摘要（加 `--report-stdout` 同时打印原始 JSON）。
+
+```bash
+python scripts/publish_script.py --diagnose drafts            # 草稿列表（标题/更新时间）
+python scripts/publish_script.py --diagnose draft-count       # 草稿总数
+python scripts/publish_script.py --diagnose draft --diag-id <media_id>   # 回读单篇
+python scripts/publish_script.py --diagnose published         # 已发布列表（含永久链接）
+python scripts/publish_script.py --diagnose stats-user  --begin 2026-07-16 --end 2026-07-22  # 用户增减(≤7天)
+python scripts/publish_script.py --diagnose stats-article --begin 2026-07-20 --end 2026-07-22  # 图文阅读(≤3天)
+python scripts/publish_script.py --diagnose comments --diag-id <msg_data_id>  # 某篇留言
+```
+
+> `published` 返回的 `msg_data_id` 可作 `comments` 的 `--diag-id`。`freepublish/datacube/comment` 部分接口可能不支持云调用：返回 `48001` 时需 relay 切 token 模式或补「微信令牌」权限后重建版本。
+
 ## 流程（--real 时）
 
 1. **校验**：`article` / `cover` / `titles_md|title_file` 文件存在；`run_dir` 自动 `makedirs`

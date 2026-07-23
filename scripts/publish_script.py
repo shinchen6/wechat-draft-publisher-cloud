@@ -292,6 +292,112 @@ def _run_delete(args):
     sys.exit(0 if not result["failed"] else 1)
 
 
+def _ts(sec):
+    try:
+        import datetime
+        return datetime.datetime.fromtimestamp(int(sec)).strftime("%Y-%m-%d %H:%M")
+    except Exception:
+        return str(sec)
+
+
+_DIAG_ROUTES = {
+    "drafts": ("/draft-list", lambda a: {"offset": 0, "count": a.diag_count, "no_content": 1}),
+    "draft": ("/draft-get", lambda a: {"media_id": a.diag_id or ""}),
+    "draft-count": ("/draft-count", lambda a: {}),
+    "published": ("/published-list", lambda a: {"offset": 0, "count": a.diag_count}),
+    "stats-user": ("/stats-user", lambda a: {"begin_date": a.begin, "end_date": a.end}),
+    "stats-article": ("/stats-article", lambda a: {"begin_date": a.begin, "end_date": a.end}),
+    "comments": ("/comment-list", lambda a: {"msg_data_id": a.diag_id or "", "index": 0,
+                                             "begin": 0, "count": a.diag_count}),
+}
+
+
+def _run_diagnose(args):
+    """--diagnose TYPE：拉取公众号数据做诊断。原样透传微信响应，打印可读摘要。"""
+    ep = args.diagnose
+    if ep in ("draft", "comments") and not args.diag_id:
+        print(f"[{ep}] 需要 --diag-id", file=sys.stderr)
+        sys.exit(2)
+    if ep in ("stats-user", "stats-article") and not (args.begin and args.end):
+        print(f"[{ep}] 需要 --begin / --end (YYYY-MM-DD)", file=sys.stderr)
+        sys.exit(2)
+
+    try:
+        cloud_url, cloud_key = resolve_relay(args.cloud_url, args.cloud_key)
+    except RuntimeError as e:
+        print(str(e), file=sys.stderr)
+        sys.exit(2)
+
+    path, build = _DIAG_ROUTES[ep]
+    payload = build(args)
+    res, err, msg = _call_with_retry(
+        lambda: _post_json(f"{cloud_url.rstrip('/')}{path}", cloud_key, payload),
+        f"诊断 {ep}",
+    )
+    if err:
+        print(f"[diagnose] 调用失败: {msg}", file=sys.stderr)
+        sys.exit(1)
+    if (res or {}).get("errcode"):
+        print(f"[diagnose] 微信返回错误: {res}", file=sys.stderr)
+        sys.exit(1)
+
+    _print_diagnostic(ep, res)
+    if args.report_stdout:
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+    sys.exit(0)
+
+
+def _print_diagnostic(ep, res):
+    if ep == "draft-count":
+        print(f"草稿总数: {res.get('total_count')}")
+        return
+    if ep == "drafts":
+        items = res.get("item", [])
+        print(f"草稿列表（共 {res.get('total_count')} 篇，显示 {len(items)} 篇）:")
+        for it in items:
+            c = it.get("content", {})
+            ni = (c.get("news_item") or [{}])
+            title = (ni[0].get("title") or "?") if ni else "?"
+            print(f"  - {it.get('media_id')} | {title} | 更新 {_ts(it.get('update_time'))}")
+        return
+    if ep == "draft":
+        c = res.get("content", {})
+        ni = (c.get("news_item") or [{}])
+        a = ni[0] if ni else {}
+        print(f"标题:      {a.get('title')}")
+        print(f"media_id:  {a.get('media_id')}")
+        print(f"摘要:      {a.get('digest') or '（空）'}")
+        print(f"正文长度:  {len(a.get('content') or '')} 字符")
+        print(f"封面:      {a.get('thumb_media_id') or '（空）'}")
+        return
+    if ep == "published":
+        items = res.get("item", [])
+        print(f"已发布列表（共 {res.get('total_count')} 篇，显示 {len(items)} 篇）:")
+        for it in items:
+            c = it.get("content", {})
+            ni = (c.get("news_item") or [{}])
+            title = (ni[0].get("title") or "?") if ni else "?"
+            url = (ni[0].get("url") or "") if ni else ""
+            print(f"  - {it.get('msg_data_id')} | {title} | {url}")
+        return
+    if ep in ("stats-user", "stats-article"):
+        rows = res.get("list", [])
+        print(f"{ep} 数据（{len(rows)} 条）:")
+        for row in rows:
+            print(f"  {row}")
+        return
+    if ep == "comments":
+        cs = res.get("comment", [])
+        if not cs:
+            print("（该文章暂无留言，或账号无留言权限）")
+            return
+        print(f"留言（{len(cs)} 条）:")
+        for c in cs:
+            print(f"  [{c.get('user_comment_id')}] {c.get('nick_name')}: {c.get('content')} "
+                  f"（赞 {c.get('like_num')} / 精选 {c.get('elected')}）")
+        return
+
+
 def main():
     parser = argparse.ArgumentParser(description="推公众号草稿 / 删草稿（支持正文插图）")
     parser.add_argument("--article")
@@ -315,11 +421,28 @@ def main():
                         help="删除单个草稿，传 media_id")
     parser.add_argument("--delete-batch", default=None,
                         help="批量删除，传一个文件，每行一个 media_id（# 开头为注释）")
+    # 诊断模式（拉取公众号全量数据，做问题诊断；与发布/删除互斥）
+    parser.add_argument("--diagnose", default=None,
+                        choices=["drafts", "draft", "draft-count", "published",
+                                 "stats-user", "stats-article", "comments"],
+                        help="诊断类型：drafts(草稿列表)/draft(单篇)/draft-count(草稿数)/"
+                             "published(已发布)/stats-user(用户增减)/stats-article(图文阅读)/comments(留言)")
+    parser.add_argument("--diag-id", default=None,
+                        help="--diagnose draft 用 media_id；comments 用 msg_data_id")
+    parser.add_argument("--diag-count", type=int, default=20,
+                        help="--diagnose drafts/published/comments 的返回条数")
+    parser.add_argument("--begin", default=None, help="--diagnose stats-* 的起始日期 YYYY-MM-DD")
+    parser.add_argument("--end", default=None, help="--diagnose stats-* 的结束日期 YYYY-MM-DD")
     args = parser.parse_args()
 
     # 删除模式优先
     if args.delete or args.delete_batch:
         _run_delete(args)
+        return
+
+    # 诊断模式
+    if args.diagnose:
+        _run_diagnose(args)
         return
 
     result = build_result()

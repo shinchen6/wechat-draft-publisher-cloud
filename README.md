@@ -68,6 +68,37 @@ python scripts/publish_script.py --delete-batch ids.txt --real
 
 底层走 relay `POST /draft-delete`，需先在云调用「微信令牌」权限加 `/cgi-bin/draft/delete` 并重建版本。
 
+## 公众号诊断（拉取全量数据）
+
+`--diagnose` 模式直接调 relay 的查询接口，把公众号的草稿、已发文章、涨粉/阅读数据、留言拉回来，做全面诊断（不写不删，纯读）。
+
+```bash
+# 草稿列表（no_content，只看标题/更新时间）
+python scripts/publish_script.py --diagnose drafts
+
+# 草稿总数
+python scripts/publish_script.py --diagnose draft-count
+
+# 回读单篇草稿完整内容
+python scripts/publish_script.py --diagnose draft --diag-id <media_id>
+
+# 已发布文章列表（含永久链接）
+python scripts/publish_script.py --diagnose published
+
+# 用户增减（begin/end: YYYY-MM-DD，最长 7 天窗口）
+python scripts/publish_script.py --diagnose stats-user --begin 2026-07-16 --end 2026-07-22
+
+# 图文阅读（最长 3 天窗口）
+python scripts/publish_script.py --diagnose stats-article --begin 2026-07-20 --end 2026-07-22
+
+# 某篇文章的留言（msg_data_id 来自 published 列表）
+python scripts/publish_script.py --diagnose comments --diag-id <msg_data_id>
+
+# 加 --report-stdout 可同时打印微信原始 JSON
+```
+
+> `freepublish` / `datacube` / `comment` 部分接口可能不支持云调用：若返回 `48001`，需 relay 切 token 模式（填 `WX_APPID`/`WX_APPSECRET`）或在「微信令牌」补权限后重建版本再测。
+
 ## 流程（--real 时）
 
 1. 本地读 `article.md`，`md2wechat` 把 Markdown 转成微信图文 HTML（图片引用先留占位）
