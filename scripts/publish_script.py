@@ -304,11 +304,6 @@ _DIAG_ROUTES = {
     "drafts": ("/draft-list", lambda a: {"offset": 0, "count": a.diag_count, "no_content": 1}),
     "draft": ("/draft-get", lambda a: {"media_id": a.diag_id or ""}),
     "draft-count": ("/draft-count", lambda a: {}),
-    "published": ("/published-list", lambda a: {"offset": 0, "count": a.diag_count}),
-    "stats-user": ("/stats-user", lambda a: {"begin_date": a.begin, "end_date": a.end}),
-    "stats-article": ("/stats-article", lambda a: {"begin_date": a.begin, "end_date": a.end}),
-    "comments": ("/comment-list", lambda a: {"msg_data_id": a.diag_id or "", "index": 0,
-                                             "begin": 0, "count": a.diag_count}),
 }
 
 
@@ -328,11 +323,8 @@ def _cloudcall_hint(res, msg):
 def _run_diagnose(args):
     """--diagnose TYPE：拉取公众号数据做诊断。原样透传微信响应，打印可读摘要。"""
     ep = args.diagnose
-    if ep in ("draft", "comments") and not args.diag_id:
+    if ep == "draft" and not args.diag_id:
         print(f"[{ep}] 需要 --diag-id", file=sys.stderr)
-        sys.exit(2)
-    if ep in ("stats-user", "stats-article") and not (args.begin and args.end):
-        print(f"[{ep}] 需要 --begin / --end (YYYY-MM-DD)", file=sys.stderr)
         sys.exit(2)
 
     try:
@@ -384,32 +376,6 @@ def _print_diagnostic(ep, res):
         print(f"正文长度:  {len(a.get('content') or '')} 字符")
         print(f"封面:      {a.get('thumb_media_id') or '（空）'}")
         return
-    if ep == "published":
-        items = res.get("item", [])
-        print(f"已发布列表（共 {res.get('total_count')} 篇，显示 {len(items)} 篇）:")
-        for it in items:
-            c = it.get("content", {})
-            ni = (c.get("news_item") or [{}])
-            title = (ni[0].get("title") or "?") if ni else "?"
-            url = (ni[0].get("url") or "") if ni else ""
-            print(f"  - {it.get('msg_data_id')} | {title} | {url}")
-        return
-    if ep in ("stats-user", "stats-article"):
-        rows = res.get("list", [])
-        print(f"{ep} 数据（{len(rows)} 条）:")
-        for row in rows:
-            print(f"  {row}")
-        return
-    if ep == "comments":
-        cs = res.get("comment", [])
-        if not cs:
-            print("（该文章暂无留言，或账号无留言权限）")
-            return
-        print(f"留言（{len(cs)} 条）:")
-        for c in cs:
-            print(f"  [{c.get('user_comment_id')}] {c.get('nick_name')}: {c.get('content')} "
-                  f"（赞 {c.get('like_num')} / 精选 {c.get('elected')}）")
-        return
 
 
 def main():
@@ -437,16 +403,12 @@ def main():
                         help="批量删除，传一个文件，每行一个 media_id（# 开头为注释）")
     # 诊断模式（拉取公众号全量数据，做问题诊断；与发布/删除互斥）
     parser.add_argument("--diagnose", default=None,
-                        choices=["drafts", "draft", "draft-count", "published",
-                                 "stats-user", "stats-article", "comments"],
-                        help="诊断类型（云调用✅: drafts/draft/draft-count；"
-                             "需 relay 切 token 模式: published/stats-user/stats-article/comments）")
+                        choices=["drafts", "draft", "draft-count"],
+                        help="诊断类型（云调用✅ 已实测可用: drafts/draft/draft-count）")
     parser.add_argument("--diag-id", default=None,
-                        help="--diagnose draft 用 media_id；comments 用 msg_data_id")
+                        help="--diagnose draft 用 media_id")
     parser.add_argument("--diag-count", type=int, default=20,
-                        help="--diagnose drafts/published/comments 的返回条数")
-    parser.add_argument("--begin", default=None, help="--diagnose stats-* 的起始日期 YYYY-MM-DD")
-    parser.add_argument("--end", default=None, help="--diagnose stats-* 的结束日期 YYYY-MM-DD")
+                        help="--diagnose drafts 的返回条数")
     args = parser.parse_args()
 
     # 删除模式优先
